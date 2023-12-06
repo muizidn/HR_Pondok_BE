@@ -5,69 +5,91 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'refresh', 'logout']]);
+    }
+
     public function register(Request $request)
     {
-        // Validate the incoming request data
-        $validator = Validator::make($request->all(), [
-            'fullname' => 'required|string',
-            'username' => 'required|string|unique:users',
+        $request->validate([
+            'fullname' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'email' => 'required|string|email|unique:users',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => $validator->errors()->all(),
-            ], 422);
-        }
-
-        // Create a new user
         $user = User::create([
-            'fullname' => $request->input('fullname'),
-            'username' => $request->input('username'),
-            'password' => bcrypt($request->input('password')),
-            'email' => $request->input('email'),
+            'fullname' => $request->fullname,
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
         ]);
-
-        // Optionally, you can immediately log in the user after registration
-        // Auth::login($user);
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'user' => $user,
+                'message' => 'User created successfully',
+                'user' => $user
             ],
         ]);
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->only(['username', 'password']);
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+        $credentials = $request->only('email', 'password');
 
-        // You can also allow users to log in with their email
-        $field = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        $credentials[$field] = $request->input('username');
-        unset($credentials['username']);
-
-        if (Auth::attempt($credentials)) {
-            $token = auth()->user()->createToken('authToken')->accessToken;
-
+        $token = Auth::guard('api')->attempt($credentials);
+        if (!$token) {
             return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'token' => $token,
-                ],
-            ]);
+                'status' => 'error',
+                'errors' => ['Unauthorized'],
+            ], 401);
         }
 
+        $user = Auth::guard('api')->user();
         return response()->json([
-            'status' => 'error',
-            'errors' => ['user_deleted'], // Customize based on your needs
-        ], 401);
+            'status' => 'success',
+            'data' => [
+                'user' => $user,
+                'authorization' => [
+                    'token' => $token,
+                    'type' => 'bearer',
+                ],
+            ],
+        ]);
+    }
+
+    public function logout()
+    {
+        Auth::guard('api')->logout();
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'message' => 'Successfully logged out',
+            ],
+        ]);
+    }
+
+    public function refresh()
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'user' => Auth::guard('api')->user(),
+                'authorization' => [
+                    'token' => Auth::guard('api')->refresh(),
+                    'type' => 'bearer',
+                ],
+            ],
+        ]);
     }
 }
