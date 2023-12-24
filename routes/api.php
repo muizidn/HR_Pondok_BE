@@ -1,35 +1,30 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\TaskController;
+use Illuminate\Support\Facades\Route;
 
+// Authentication routes
+Route::post('/signup', [AuthController::class, 'signup']);
+Route::post('/signin', [AuthController::class, 'signin']);
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+// Route::middleware('auth:api')->group(function () {
+    Route::post('/signout', [AuthController::class, 'signout']);
+    Route::post('/refresh-token', [AuthController::class, 'refresh']);
+// });
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:api')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'getProfile']);
+// });
 
-Route::middleware('auth:api')->group(function () {
-    
-});
+// Route::middleware('auth:api')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::patch('/notifications/{notificationId}/read', [NotificationController::class, 'markNotificationAsRead']);
+// });
 
-
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
-Route::post('refresh', [AuthController::class, 'refresh']);
-Route::post('logout', [AuthController::class, 'logout']);
-
-Route::post('presensi/create', [PresensiController::class, 'create']);
-Route::get('presensi/status', [PresensiController::class, 'status']);
+// Route::middleware('auth:api')->group(function () {
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::patch('/tasks/{taskId}', [TaskController::class, 'update']);
+// });

@@ -2,41 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api', ['except' => ['signin', 'signup', 'refresh', 'signout']]);
-    }
-
     public function signup(Request $request)
     {
         $request->validate([
             'fullname' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'email' => 'required|string|email|max:255|unique:users',
+            'username' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
         ]);
-
-        $userId = DB::table('users')->insertGetId([
-            'fullname' => $request->fullname,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $user = User::find($userId);
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'message' => 'User created successfully',
-                'user' => $user,
+                'user' => [
+                    "id" => 1,
+                    "username" => $request->username
+                ],
             ],
         ]);
     }
@@ -44,51 +31,35 @@ class AuthController extends Controller
     public function signin(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email',
+            'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = DB::table('users')->where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => ['Unauthorized'],
-            ], 401);
-        }
-
-        // You can generate a token or session here if needed
-
         return response()->json([
             'status' => 'success',
             'data' => [
-                'user' => $user,
+                'token' => $request->username,
+                'refresh_token' => $request->username,
             ],
         ]);
     }
 
-    public function signout()
+    public function signout(Request $request)
     {
-        // Implement your signout logic here
-        // This may include invalidating tokens or clearing sessions
-        // Example: $request->session()->forget('user');
-
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'message' => 'Successfully logged out',
-            ],
+            'data' => null,
         ]);
     }
 
-    public function refresh()
+    public function refresh(Request $request)
     {
-        // Implement token refresh logic here if needed
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'message' => 'Token refreshed',
+                'token' => "new token",
+                'refresh_token' => "new refresh token",
             ],
         ]);
     }
