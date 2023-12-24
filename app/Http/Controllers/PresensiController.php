@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class PresensiController extends Controller
 {
-    public function getPresensiStatus(Request $request)
+    public function status(Request $request)
     {
         $request->validate([
             'presensi_at' => 'required|date',
@@ -25,7 +25,7 @@ class PresensiController extends Controller
         ]);
     }
 
-    public function postPresensi(Request $request)
+    public function create(Request $request)
     {
         $request->validate([
             'image_url' => 'required|string',
