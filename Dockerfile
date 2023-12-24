@@ -21,4 +21,5 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 RUN chown -R www-data:www-data bootstrap/cache
 
-CMD ["php-fpm"]
+CMD php artisan serve --host=0.0.0.0 --port=8000
+
